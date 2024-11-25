@@ -1,0 +1,16 @@
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import declarative_base
+
+# Define SQLAlchemy base
+Base = declarative_base()
+
+# Define a sample table
+class ExampleTable(Base):
+    __tablename__ = "user_interactions"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+
+# Create SQLite database and table
+engine = create_engine("sqlite:///bot_database.db")
+Base.metadata.create_all(engine)
+print("Database and table created successfully!")
