@@ -19,4 +19,5 @@ async def main(): # main async fucntion
     await bot.send_message(chat_id = scpro_developer_chat_id, text = "started") #sending start debug info 
     await dp.start_polling(bot) # start the bot polling
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

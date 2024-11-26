@@ -4,20 +4,43 @@ import aiogram.utils.keyboard
 
 from icecream import ic
 
-#main menu keyboard
+#----------------------------------------------------MAIN MENU KEYBOARD----------------------------------------
 main_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
         [
-            aiogram.types.InlineKeyboardButton(text = "Создать аватарку", callback_data = "generate"),
+            aiogram.types.InlineKeyboardButton(text = "📃🖌️ Создать аватарку 📃🖌️", callback_data = "generate"),
         ],
         [
-            aiogram.types.InlineKeyboardButton(text = "Профиль", callback_data = "profile"),
+            aiogram.types.InlineKeyboardButton(text = "👤 Профиль 👤", callback_data = "profile"),
         ]
     ]
 )
 
 back_to_main_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
+        [
+            aiogram.types.InlineKeyboardButton(text = "В главное меню", callback_data = "back_to_main_menu"),
+        ]
+    ]
+)
+
+#---------------------------------------------------GENERATE KEYBOARD--------------------------------------------
+generate_menu = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [
+            aiogram.types.InlineKeyboardButton(text = "Промт", callback_data = "generate"),
+        ],
+        [
+            aiogram.types.InlineKeyboardButton(text = "Cтиль", callback_data = "style"),
+        ]
+    ]
+)
+
+after_generate_menu = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [
+            aiogram.types.InlineKeyboardButton(text = "Сгенерировать еще раз", callback_data = "generate_another_one"),
+        ],
         [
             aiogram.types.InlineKeyboardButton(text = "В главное меню", callback_data = "back_to_main_menu"),
         ]
