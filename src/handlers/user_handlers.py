@@ -20,7 +20,7 @@ user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 #handling /start command
 async def start_handler(message_or_callback, state: FSMContext):
     await state.set_state(UserStates.main_menu)
-    await message_or_callback.answer(text="Здравствуйте, рады снова вас видеть!", reply_markup=inline_keyboards.main_menu)
+    await message_or_callback.answer(text = "Здравствуйте, рады снова вас видеть!", reply_markup = inline_keyboards.main_menu)
 
 @user_router.callback_query(F.data == "back_to_main_menu")
 async def handle_back_to_main_menu(callback: CallbackQuery, state: FSMContext):
