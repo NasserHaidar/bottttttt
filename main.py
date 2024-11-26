@@ -3,7 +3,7 @@ import aiogram
 import aiogram.filters
 from config import *
 
-from handlers import user_handlers
+from src import user_handlers
 
 from icecream import ic
 
