@@ -1,1 +1,5 @@
+src\__pycache__
+src\filters\__pycache__
+src\handlers\__pycache__
+src\keyboards\__pycache__
 old

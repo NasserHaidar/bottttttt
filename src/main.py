@@ -3,11 +3,15 @@ import aiogram
 import aiogram.filters
 from config import *
 
+from handlers import user_handlers
+
 from icecream import ic
 
 #constants
 bot = aiogram.Bot(BOT_TOKEN)
 dp = aiogram.Dispatcher() #Dispatcher - main Router
+
+dp.include_router(user_handlers.user_router)
 
 #start polling
 async def main(): # main async fucntion
