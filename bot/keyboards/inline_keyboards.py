@@ -9,6 +9,8 @@ main_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
         [
             aiogram.types.InlineKeyboardButton(text = "Создать аватарку", callback_data = "generate"),
+        ],
+        [
             aiogram.types.InlineKeyboardButton(text = "Профиль", callback_data = "profile"),
         ]
     ]
