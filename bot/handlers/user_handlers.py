@@ -10,7 +10,7 @@ from aiogram.filters import StateFilter, Command, CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from dotenv import find_dotenv , load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from pyexpat.errors import messages
 
 import database
@@ -25,16 +25,11 @@ from ..states.user_states import UserStates
 from ..filters import chat_type
 from ai import AI_Requests
 
-from dotenv import api_key
-
-
 #create new Router for handling user messages
 user_router = aiogram.Router()
 user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 
 AI_requests = AI_Requests(api_key = os.getenv("api_key"))
-
-
 
 #------------------------------------------------MAIN MENU-------------------------------------------------------
 async def start_handler(message: Message, state: FSMContext):
@@ -50,6 +45,23 @@ async def menu_handle_callback(callback: CallbackQuery, state: FSMContext):
 @user_router.message(StateFilter("*"), CommandStart())
 async def menu_handle_start_command(message: Message, state: FSMContext):
     await start_handler(message, state)
+
+
+#________________________________________________подписка________________________________________________________
+@user_router.callback_query(text = "subscribe")
+async def subscribe(call: types.CallbackQuery):
+    await bot.delete_message(call.from_user.id , call.message.message_id)
+    await bot.send_invoice(caht_id = call.from_user.id , title="оформление подписки" , description="" , payload="monthly_sub" , provider_token=YOOTOKEN , currency="RUB" , start_parameter="test" , prices=[{"label": "руб" , "amount": 15000}])
+
+
+@user_router.callback_query_handler()
+async def process_pre_checkout_query(pre_checkout_query: types.preCheckoutQuery):
+    await bot.answer_pre_checkout_query(pre_checkout_query.id , ok= True)
+
+@user_router.callback_query_handler(content_type = ContentType.SUCCESSFUL_PAYMENT)
+async def process_pay(message: type.Message):
+    if message.successful_payment.invoice_payload == "month_sub":
+        await bot.send_message(message.from_user.id, "вам выдана подписка на месяц!")
 
 #------------------------------------------------GENERATING-------------------------------------------------------
 @user_router.callback_query(F.data == "generate")
@@ -80,7 +92,7 @@ async def generate_handle_callback(call: CallbackQuery, state: FSMContext):
 @user_router.callback_query(F.data == "profile")
 async def profile_menu(call: CallbackQuery, state: FSMContext , session: AsyncSession ):
 
-    await state.update_data(image=messages.photo[-1].file_id)
+    await state.update_data(image = messages.photo[-1].file_id)
 
     await call.message.answer(text = f"Профиль пользователя: {call.from_user.username}",
                               reply_markup = inline_keyboards.profile_menu)
