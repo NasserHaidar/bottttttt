@@ -1,6 +1,7 @@
 #imports
-import asyncio
 import io
+import os
+import asyncio
 import aiogram
 
 from aiogram import F
@@ -9,19 +10,22 @@ from aiogram.filters import StateFilter, Command, CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
+from dotenv import find_dotenv , load_dotenv
+load_dotenv(find_dotenv())
+
 from icecream import ic
 
 from ..keyboards import inline_keyboards
 from ..states.user_states import UserStates
 from ..filters import chat_type
 from ai import AI_Requests
-from config import api_key
+from database import session_maker
 
 #create new Router for handling user messages
 user_router = aiogram.Router()
 user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 
-AI_requests = AI_Requests(api_key = api_key)
+AI_requests = AI_Requests(api_key = os.getenv("api_key"))
 
 #------------------------------------------------MAIN MENU-------------------------------------------------------
 async def start_handler(message: Message, state: FSMContext):

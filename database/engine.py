@@ -1,11 +1,10 @@
 import os
 from database.models.user import Base
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession  , create_async_engine
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 
 # Create the SQLAlchemy engine
-engine = create_engine(os.getenv('DB_LITE') , echo=True)
+engine = create_async_engine(os.getenv('DB_LITE') , echo=True)
 
 # Create an async session maker
 session_maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)

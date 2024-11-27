@@ -1,19 +1,17 @@
+import os
 import asyncio
 import aiogram
 import aiogram.filters
-from config import *
 
 from dotenv import find_dotenv , load_dotenv
 load_dotenv(find_dotenv())
 from bot import user_handlers
-from database.engine import create_db, drop_db
+from database import create_db, drop_db
 
 from icecream import ic
 
-from database.engine import create_db, drop_db
-
 #constants
-bot = aiogram.Bot(BOT_TOKEN)
+bot = aiogram.Bot(os.getenv("BOT_TOKEN"))
 dp = aiogram.Dispatcher() #Dispatcher - main Router
 
 dp.include_router(user_handlers.user_router)
@@ -35,7 +33,7 @@ async def main(): # main async fucntion
     dp.shutdown.register(on_shutdown)
 
     await bot.delete_webhook(drop_pending_updates = True) #delete webhook
-    await bot.send_message(chat_id = scpro_developer_chat_id, text = "started") #sending start debug info 
+    await bot.send_message(chat_id = os.getenv("scpro_developer_chat_id"), text = "started") #sending start debug info 
     await dp.start_polling(bot) # start the bot polling
 
     # Create the database
