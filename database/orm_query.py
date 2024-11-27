@@ -9,7 +9,7 @@ from database.models.user import User
 
 async def orm_add_user(session: AsyncSession , data: dict):
     obj = User(
-        id=data["name"],
+        id=data["id"],
         name=data["name"],
         status_subscription=data["status_sub"],
         balance=data["balance"],
@@ -33,7 +33,7 @@ async def orm_get_user(session:AsyncSession , user_id: int):
 
 async def orm_update_user(session:AsyncSession, user_id: int, data):
     query = update(User).where(User.id == user_id).values(
-        id=data["name"],
+        id=data["id"],
         name=data["name"],
         status_subscription=data["status_sub"],
         balance=float(data["balance"]),
