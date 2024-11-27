@@ -46,3 +46,15 @@ after_generate_menu = aiogram.types.InlineKeyboardMarkup(
         ]
     ]
 )
+
+#-----------------------------------------------------PROFILE MENU---------------------------------------------------
+profile_menu = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [
+            aiogram.types.InlineKeyboardButton(text = "Подписка", callback_data = "subscribe")
+        ],
+        [
+            aiogram.types.InlineKeyboardButton(text = "Фото", callback_data = "photo")
+        ]
+    ]
+)

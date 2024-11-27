@@ -65,6 +65,7 @@ async def generate_handle_callback(call: CallbackQuery, state: FSMContext):
 
 #-------------------------------------------------PROFILE---------------------------------------------------------
 @user_router.callback_query(F.data == "profile")
-async def start_generate(call: CallbackQuery, state: FSMContext):
-    await call.message.answer(text = "profile")
+async def profile_menu(call: CallbackQuery, state: FSMContext):
+    await call.message.answer(text = f"Профиль пользователя: {call.from_user.username}", 
+                              reply_markup = inline_keyboards.profile_menu)
    
