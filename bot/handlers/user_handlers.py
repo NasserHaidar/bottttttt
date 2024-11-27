@@ -13,7 +13,7 @@ from aiogram.fsm.context import FSMContext
 from dotenv import find_dotenv , load_dotenv
 from pyexpat.errors import messages
 
-from database.orm_query import orm_add_user, orm_get_user
+import database
 
 load_dotenv(find_dotenv())
 
@@ -26,9 +26,6 @@ from ..filters import chat_type
 from ai import AI_Requests
 
 from dotenv import api_key
-from database.models.user import User
-
-from database import session_maker
 
 
 #create new Router for handling user messages
@@ -89,6 +86,6 @@ async def profile_menu(call: CallbackQuery, state: FSMContext , session: AsyncSe
                               reply_markup = inline_keyboards.profile_menu)
     data = await state.get_data()
 
-    await orm_add_user(session, data)
+    await database.orm_add_user(session, data)
 
     await state.clear()
