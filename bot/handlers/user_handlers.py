@@ -1,6 +1,7 @@
 #imports
-import asyncio
 import io
+import os
+import asyncio
 import aiogram
 
 from aiogram import F
@@ -9,23 +10,22 @@ from aiogram.filters import StateFilter, Command, CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
+from dotenv import find_dotenv , load_dotenv
+load_dotenv(find_dotenv())
+
 from icecream import ic
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..keyboards import inline_keyboards
 from ..states.user_states import UserStates
 from ..filters import chat_type
 from ai import AI_Requests
-from config import api_key
-from database.models.user import user
+from database import session_maker
 
 #create new Router for handling user messages
 user_router = aiogram.Router()
 user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 
-AI_requests = AI_Requests(api_key = api_key)
-
-
+AI_requests = AI_Requests(api_key = os.getenv("api_key"))
 
 #------------------------------------------------MAIN MENU-------------------------------------------------------
 async def start_handler(message: Message, state: FSMContext):
@@ -69,21 +69,7 @@ async def generate_handle_callback(call: CallbackQuery, state: FSMContext):
 
 #-------------------------------------------------PROFILE---------------------------------------------------------
 @user_router.callback_query(F.data == "profile")
-async def profile_menu(call: CallbackQuery, state: FSMContext , session: AsyncSession ):
+async def profile_menu(call: CallbackQuery, state: FSMContext):
     await call.message.answer(text = f"Профиль пользователя: {call.from_user.username}", 
                               reply_markup = inline_keyboards.profile_menu)
-    data = await state.get_data()
-
-
-    obj = (user(
-        id = data["name"],
-        name = data["name"],
-        status_subscription = data["status_sub"],
-        balance = data["balance"],
-        image = data["image"],
-        date = data["date"],
-    ))
-    session.add(obj)
-    await session.commit()
-
-    await state.clear()
+   
