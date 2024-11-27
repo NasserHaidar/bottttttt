@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message , TelegramObject
