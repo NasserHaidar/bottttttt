@@ -10,7 +10,7 @@ from aiogram.filters import StateFilter, Command, CommandStart
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from dotenv import find_dotenv , load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from pyexpat.errors import messages
 
 import database
@@ -25,16 +25,11 @@ from ..states.user_states import UserStates
 from ..filters import chat_type
 from ai import AI_Requests
 
-from dotenv import api_key
-
-
 #create new Router for handling user messages
 user_router = aiogram.Router()
 user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 
 AI_requests = AI_Requests(api_key = os.getenv("api_key"))
-
-
 
 #------------------------------------------------MAIN MENU-------------------------------------------------------
 async def start_handler(message: Message, state: FSMContext):
@@ -80,7 +75,7 @@ async def generate_handle_callback(call: CallbackQuery, state: FSMContext):
 @user_router.callback_query(F.data == "profile")
 async def profile_menu(call: CallbackQuery, state: FSMContext , session: AsyncSession ):
 
-    await state.update_data(image=messages.photo[-1].file_id)
+    await state.update_data(image = messages.photo[-1].file_id)
 
     await call.message.answer(text = f"Профиль пользователя: {call.from_user.username}",
                               reply_markup = inline_keyboards.profile_menu)

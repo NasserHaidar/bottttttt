@@ -3,14 +3,14 @@ import asyncio
 import aiogram
 import aiogram.filters
 
+from bot import user_handlers
+
 from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
-from bot import user_handlers
-from database.engine import create_db, drop_db, session_maker
 
 from icecream import ic
 
-from database.engine import create_db, drop_db
+from database.engine import create_db, drop_db, session_maker
 from middlewares.db import DataBaseSession
 
 #constants
