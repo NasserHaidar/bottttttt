@@ -61,29 +61,35 @@ async def menu_handle_callback(call: CallbackQuery, state: FSMContext, session: 
 
 #------------------------------------------------GENERATING-------------------------------------------------------
 @user_router.callback_query(F.data == "generate")
-async def set_propmt(call: CallbackQuery, state: FSMContext):
+async def set_propmt(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     await call.message.delete()
     await state.set_state(UserStates.prompt)
 
     await call.message.answer(text = "Введите текстовый запрос", reply_markup = inline_keyboards.back_to_main_menu)
 
-async def generate(message: Message, state: FSMContext):
-    waiting_message = await message.answer("Генерация изображения, это может занять некоторое время...")
-    await state.update_data(prompt = message.text)
-    data = await state.get_data()
-    image_data = await asyncio.to_thread(AI_requests.imitation_generate_image, data["prompt"], AI_requests.dalle2)
-    image = BufferedInputFile(image_data, f"generated_image_{message.from_user.id}")
-    await waiting_message.delete()
+async def generate(message: Message, state: FSMContext, session: AsyncSession):
+    user_data = await database.orm_get_user(session, message.from_user.id)
+    current_user_balance = float(user_data.balance )
+    if current_user_balance - 5.0 > 0:
+        current_user_balance -= 5.0
+        waiting_message = await message.answer("Генерация изображения, это может занять некоторое время...")
+        await state.update_data(prompt = message.text)
+        data = await state.get_data()
+        image_data = await asyncio.to_thread(AI_requests.imitation_generate_image, data["prompt"], AI_requests.dalle2)
+        image = BufferedInputFile(image_data, f"generated_image_{message.from_user.id}")
+        await waiting_message.delete()
 
-    await message.answer_photo(photo = image, reply_markup = inline_keyboards.after_generate_menu)
+        await message.answer_photo(photo = image, reply_markup = inline_keyboards.after_generate_menu)
+    else:
+        await message.answer(text = "Не хватает средств на балансе", reply_markup = inline_keyboards.back_to_main_menu)
 
 @user_router.message(StateFilter(UserStates.prompt), F.text)
-async def generate_handle_state(message: Message, state: FSMContext):
-    await generate(message, state)
+async def generate_handle_state(message: Message, state: FSMContext, session: AsyncSession):
+    await generate(message, state, session)
 
 @user_router.callback_query(F.data == "generate_another_one")
-async def generate_handle_callback(call: CallbackQuery, state: FSMContext):
-    await generate(call.message, state)
+async def generate_handle_callback(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await generate(call.message, state, session)
 
 #-------------------------------------------------PROFILE---------------------------------------------------------
 #PROFILE MENU
@@ -104,16 +110,33 @@ async def balance_menu(call: CallbackQuery, state: FSMContext, session: AsyncSes
     await state.set_state(UserStates.balance_menu)
     user_data = await database.orm_get_user(session, call.from_user.id)
 
-    await call.message.edit_text(text = f"Текущий баланс: {user_data.balance}", reply_markup = inline_keyboards.balance_menu)
+    await call.message.edit_text(text = f"Текущий баланс: {user_data.balance} руб.", reply_markup = inline_keyboards.balance_menu)
 
 @user_router.callback_query(StateFilter(UserStates.balance_menu), F.data == "top_up_balance")
-async def top_up_balance(call: CallbackQuery, state: FSMContext, session: AsyncSession):
-    """Top up the balance, yookassa api"""
+async def send_top_up_balance(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+    """Send needly balance to top up"""
     await call.message.delete()
     await state.set_state(UserStates.top_up_balance)
 
-    await call.message.answer(text = "top_up_balance", 
+    await call.message.answer(text = "Введите сумму пополнения", 
                               reply_markup = inline_keyboards.back_to_balance_menu)
+
+@user_router.message(StateFilter(UserStates.top_up_balance), F.text)
+async def top_up_balance(message: Message, state: FSMContext, session: AsyncSession):
+    """Top up the balance, yookassa api"""
+    user_data = await database.orm_get_user(session, message.from_user.id)
+
+    #TODO make yookassa api integration
+
+    #test code without payment system:
+
+    await message.delete()
+    try:
+        float(message.text)
+        await database.orm_update_user_balance(session, message.from_user.id, float(user_data.balance) + float(message.text))
+        await message.answer(text = f"Баланс успешно пополнен на: {message.text} руб.", reply_markup = inline_keyboards.back_to_balance_menu)
+    except ValueError:
+        await message.answer(text = "Вы ввели не число, попробуйте еще раз")
 
 #PHOTO
 @user_router.callback_query(StateFilter(UserStates.profile_menu, UserStates.send_photo), F.data == "photo")
@@ -149,25 +172,14 @@ async def send_photo(call: CallbackQuery, state: FSMContext, session: AsyncSessi
 @user_router.message(StateFilter(UserStates.send_photo), F.photo)
 async def handling_send_photo(message: Message, state: FSMContext, session: AsyncSession):
     """Processing a photo sent by a user"""
-    user_data = await database.orm_get_user(session, message.from_user.id)
-
     photo_file_id = message.photo[-1].file_id
 
     try:
         file = await message.bot.get_file(photo_file_id)
-        image_data: io.BytesIO = await message.bot.download_file(file.file_path)
-        image_data = image_data.getvalue()
+        image: io.BytesIO = await message.bot.download_file(file.file_path)
+        image = image.getvalue()
 
-        data = {
-            "id": user_data.id,
-            "name": user_data.name,
-            "status_sub": user_data.status_subscription,
-            "balance": user_data.balance,
-            "image": image_data,
-            "date": user_data.date
-        }
-
-        await database.orm_update_user(session, user_data.id, data)
+        await database.orm_update_user_image(session, message.from_user.id, image)
         await message.answer(text = "Фото успешно установлено", reply_markup = inline_keyboards.back_to_photo_menu)
 
     except Exception as e:
