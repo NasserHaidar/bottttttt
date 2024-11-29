@@ -11,11 +11,11 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 from dotenv import find_dotenv, load_dotenv
+load_dotenv(find_dotenv())
 from pyexpat.errors import messages
+from datetime import datetime
 
 import database
-
-load_dotenv(find_dotenv())
 
 from icecream import ic
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,19 +32,30 @@ user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 AI_requests = AI_Requests(api_key = os.getenv("api_key"))
 
 #------------------------------------------------MAIN MENU-------------------------------------------------------
-async def start_handler(message: Message, state: FSMContext):
+async def start_handler(message: Message, state: FSMContext, session: AsyncSession):
     await state.set_state(UserStates.main_menu)
     await message.answer_photo(photo = FSInputFile("assets\\empty_image.png"),
-                               caption = "Здравствуйте, рады снова вас видеть!",
+                               caption = f"Здравствуйте, {message.from_user.username}, рады снова вас видеть!",
                                reply_markup = inline_keyboards.main_menu)
+    
+    if not await database.orm_get_user(session, message.from_user.id):
+        data = {
+            "id": message.from_user.id,
+            "name": message.from_user.username,
+            "status_sub": None,
+            "balance": 0,
+            "image": None,
+            "date": datetime.strptime(datetime.now().strftime("%d.%m.%y"), "%d.%m.%y")
+        }
+        await database.orm_add_user(session, data)
 
 @user_router.callback_query(F.data == "back_to_main_menu")
-async def menu_handle_callback(callback: CallbackQuery, state: FSMContext):
-    await start_handler(callback.message, state)
+async def menu_handle_callback(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await start_handler(callback.message, state, session)
 
 @user_router.message(StateFilter("*"), CommandStart())
-async def menu_handle_start_command(message: Message, state: FSMContext):
-    await start_handler(message, state)
+async def menu_handle_start_command(message: Message, state: FSMContext, session: AsyncSession):
+    await start_handler(message, state, session)
 
 #------------------------------------------------GENERATING-------------------------------------------------------
 @user_router.callback_query(F.data == "generate")
@@ -73,14 +84,7 @@ async def generate_handle_callback(call: CallbackQuery, state: FSMContext):
 
 #-------------------------------------------------PROFILE---------------------------------------------------------
 @user_router.callback_query(F.data == "profile")
-async def profile_menu(call: CallbackQuery, state: FSMContext , session: AsyncSession ):
-
-    await state.update_data(image = messages.photo[-1].file_id)
-
+async def profile_menu(call: CallbackQuery, state: FSMContext , session: AsyncSession):
+    await state.get_state(UserStates.profile_menu)
     await call.message.answer(text = f"Профиль пользователя: {call.from_user.username}",
                               reply_markup = inline_keyboards.profile_menu)
-    data = await state.get_data()
-
-    await database.orm_add_user(session, data)
-
-    await state.clear()

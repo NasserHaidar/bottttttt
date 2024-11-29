@@ -1,7 +1,8 @@
 import os
 from database.models.user import Base
-
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
+from dotenv import find_dotenv, load_dotenv
+load_dotenv(find_dotenv())
 
 # Create the SQLAlchemy engine
 engine = create_async_engine(os.getenv('DB_LITE') , echo=True)

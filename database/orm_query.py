@@ -1,4 +1,4 @@
-from select import select
+from sqlalchemy import select
 from sqlalchemy import delete
 from sqlalchemy.dialects.mysql import FLOAT
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -3,6 +3,7 @@ from icecream import ic
 
 class UserStates(StatesGroup):
     main_menu = State()
+    profile_menu = State()
     prompt = State()
     model = State()
     style = State()

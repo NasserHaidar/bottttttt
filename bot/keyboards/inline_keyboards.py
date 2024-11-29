@@ -51,10 +51,10 @@ after_generate_menu = aiogram.types.InlineKeyboardMarkup(
 profile_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
         [
-            aiogram.types.InlineKeyboardButton(text = "Подписка", callback_data = "subscribe")
+            aiogram.types.InlineKeyboardButton(text = "Управление Балансом", callback_data = "subscribe")
         ],
         [
-            aiogram.types.InlineKeyboardButton(text = "Фото", callback_data = "photo")
+            aiogram.types.InlineKeyboardButton(text = "Установить Фото", callback_data = "photo")
         ]
     ]
 )
