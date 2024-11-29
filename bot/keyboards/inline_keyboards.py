@@ -34,6 +34,7 @@ after_generate_menu = aiogram.types.InlineKeyboardMarkup(
 )
 
 #-----------------------------------------------------PROFILE MENU---------------------------------------------------
+#profile menu
 profile_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
         [aiogram.types.InlineKeyboardButton(text = "Управление Балансом", callback_data = "balance")],
@@ -42,6 +43,7 @@ profile_menu = aiogram.types.InlineKeyboardMarkup(
     ]
 )
 
+#balance
 balance_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
         [aiogram.types.InlineKeyboardButton(text = "Пополнить Баланс", callback_data = "top_up_balance")],
@@ -55,10 +57,17 @@ back_to_balance_menu = aiogram.types.InlineKeyboardMarkup(
     ]
 )
 
+#photo
 photo_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
         [aiogram.types.InlineKeyboardButton(text = "Посмотреть текущее Фото", callback_data = "show_photo")],
         [aiogram.types.InlineKeyboardButton(text = "Установить новое Фото", callback_data = "new_photo")],
         [aiogram.types.InlineKeyboardButton(text = "Назад", callback_data = "profile")]
+    ]
+)
+
+back_to_photo_menu = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [aiogram.types.InlineKeyboardButton(text = "Назад", callback_data = "photo")]
     ]
 )

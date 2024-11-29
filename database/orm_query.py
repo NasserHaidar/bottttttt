@@ -1,8 +1,6 @@
-from sqlalchemy import select
-from sqlalchemy import delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.dialects.mysql import FLOAT
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.sync import update
 
 from database.models.user import User
 
@@ -33,7 +31,6 @@ async def orm_get_user(session:AsyncSession , user_id: int):
 
 async def orm_update_user(session:AsyncSession, user_id: int, data):
     query = update(User).where(User.id == user_id).values(
-        id=data["id"],
         name=data["name"],
         status_subscription=data["status_sub"],
         balance=float(data["balance"]),

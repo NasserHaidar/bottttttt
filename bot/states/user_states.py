@@ -13,6 +13,7 @@ class UserStates(StatesGroup):
     top_up_balance = State()
 
     #set photo
+    photo_menu = State()
     send_photo = State()
 
     #generating
