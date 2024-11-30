@@ -6,4 +6,5 @@ bot\keyboards\__pycache__
 bot\states\__pycache__
 ai\__pycache__
 database\__pycache__
+database\database.db
 \.idea\
