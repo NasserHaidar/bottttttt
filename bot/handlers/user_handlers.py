@@ -61,7 +61,7 @@ async def menu_handle_callback(call: CallbackQuery, state: FSMContext, session: 
 
 
 #________________________________________________подписка________________________________________________________
-@user_router.callback_query(text = "subscribe")
+"""@user_router.callback_query(text = "subscribe")
 async def subscribe(call: types.CallbackQuery):
     await bot.delete_message(call.from_user.id , call.message.message_id)
     await bot.send_invoice(caht_id = call.from_user.id , title="оформление подписки" , description="" , payload="monthly_sub" , provider_token=YOOTOKEN , currency="RUB" , start_parameter="test" , prices=[{"label": "руб" , "amount": 15000}])
@@ -75,7 +75,7 @@ async def process_pre_checkout_query(pre_checkout_query: types.preCheckoutQuery)
 async def process_pay(message: type.Message):
     if message.successful_payment.invoice_payload == "month_sub":
         await bot.send_message(message.from_user.id, "вам выдана подписка на месяц!")
-
+"""
 
 
 #------------------------------------------------GENERATING-------------------------------------------------------
