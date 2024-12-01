@@ -48,20 +48,5 @@ async def main(): # main async fucntion
         raise DataBaseSession(f"Failed to create database: {e}")
 
 
-    # Initialize the payment processor
-    payment_processor = YooKassaPayment(account_id = os.getenv('YOOKASSA_SHOP_ID'),
-                                         secret_key = os.getenv('YOOKASSA_SECRET_KEY'))
-
-    # Example of creating a payment
-    payment = payment_processor.create_payment(
-        amount = 100.00,
-        currency = 'RUB',
-        description = 'Order No. 1',
-        return_url = 'https://www.example.com/return_url'
-    )
-
-    print(f"Payment created: {payment}")
-
-
 if __name__ == "__main__":
     asyncio.run(main())
