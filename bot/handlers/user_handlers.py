@@ -192,7 +192,6 @@ async def handling_send_photo(message: Message, state: FSMContext, session: Asyn
     #    await message.answer("Произошла ошибка при обработке вашей фотографии.")
 
 
-
 @user_router.callback_query(commands=['generate_image'])
 async def handle_generate_image(message: types.Message):
     user_id = message.from_user.id
