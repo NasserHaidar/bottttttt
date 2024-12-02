@@ -1,44 +1,162 @@
 import requests
 import json
+import time
 
 from icecream import ic
+from io import BytesIO
 from openai import OpenAI
 
 class AI_Requests():
-    def __init__(self, api_key: str) -> None:
-        self.client = OpenAI(
-            api_key = api_key,
-            base_url = "https://api.proxyapi.ru/openai/v1"
-        )
-        self.dalle3 = "dall-e-3",
-        self.dalle2 = "dall-e-2"
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = 'https://api.leonardo.ai/v1/images'
+        self.upload_images_url = "https://cloud.leonardo.ai/api/rest/v1/init-image"
+        self.headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "authorization": f"Bearer {self.api_key}"
+        }
+
+    def upload_image(self, image: bytes):
+        try:
+            # Инициализация загрузки
+            response = requests.post(url=self.upload_images_url, json={"extension": "jpg"}, headers=self.headers)
+            response.raise_for_status()  # Raises an error for bad responses
+            
+            upload_data = response.json().get('uploadInitImage', {})
+            fields = json.loads(upload_data.get('fields', '{}'))
+            upload_url = upload_data.get('url')
+            
+            if not upload_url or not fields:
+                return False, "Upload URL or fields not received."
+            
+            # Создаем файловый объект из переданных байтов
+            files = {'file': ('image.jpg', BytesIO(image), 'image/jpeg')}
+            
+            # Загрузка изображения
+            response = requests.post(url=upload_url, data=fields, files=files)
+            response.raise_for_status()  # Raises an error for bad responses
+            
+            # Проверка статуса загрузки
+            upload_id = upload_data.get('id')
+            return True, upload_id if upload_id else "Upload successful but no ID returned."
     
-    def imitation_generate_image(self, prompt, model):
-        for i in range(1000000):
-            if i % 100000 == 0:
-                ic("imitate generating...")
-            i**200
-        
-        with open("assets\\empty_image.png", "rb") as file:
-            return file.read()
+        except requests.exceptions.RequestException as e:
+            return False, f"Request failed: {str(e)}"
+        except json.JSONDecodeError:
+            return False, "Failed to decode JSON response."
 
-    def generate_image(self, prompt: str, model: str):
-        response = self.client.images.generate(
-            prompt = prompt,
-            size = "1024x1024",
-            model = model
-        )
-        #get image url
-        image_url = response.data[0].url
+    def get_image(self, image_id: str) -> bytes:
+        try:
+            # Construct the URL for retrieving the image
+            response = requests.get(f"{self.upload_images_url}/{image_id}", headers=self.headers)
+            response.raise_for_status()  # Raises an error for bad responses
 
-        #send get request
-        image_response = requests.get(image_url)
+            # Parse the JSON response to get the image URL
+            image_data = response.json()  # This will correctly parse the JSON response
+            print("Image metadata response:", image_data)  # Debug: print the response
 
-        #check status code
-        if image_response.status_code == 200:
-            #return image as bytes object
-            return image_response.content
-        else:
-            #if error
-            ic(f"Error: Unable to download image, status code: {image_response.status_code}")
+            image_url = image_data["init_images_by_pk"]["url"]  # Attempt to access the URL from the parsed JSON
+
+            if not image_url:
+                print("No image URL found in the response.")
+                return None
+            
+            # Retrieve the image from the image URL
+            response = requests.get(image_url, headers=self.headers)
+            response.raise_for_status()  # Raises an error for bad responses
+
+            return response.content  # Return the raw image bytes
+
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred while retrieving the image: {e}")
             return None
+        except json.JSONDecodeError:
+            print("Failed to decode JSON response.")
+            return None
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return None
+
+
+    def generate_image(self, prompt: str, image_id: int):
+        if not prompt:  # Проверка на пустоту
+            print("Ошибка: 'prompt' не может быть пустым.")
+            return None
+        
+        generate_url = "https://cloud.leonardo.ai/api/rest/v1/generations"
+
+        data = {
+            "height": 512,
+            "modelId": "1e60896f-3c26-4296-8ecc-53e2afecc132",
+            "prompt": prompt,
+            "width": 512,
+        }
+
+        try:
+            #response = requests.post(generate_url, json=data, headers=self.headers)
+            #response.raise_for_status()  # Это вызовет ошибку, если код статуса не 200
+            #generation_id = response.json()['sdGenerationJob']['generationId']
+            
+            #while True:
+                #image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}"
+                image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/8f46007e-ff2d-438e-a9a6-dfcba5367eba"
+                response = requests.get(image_url, headers=self.headers)
+                ic(response.json())
+                #if response.json()["generations_by_pk"]["status"] == "COMPLETE":
+                #    self.control_network_generation(prompt, generation_id, image_id)
+                #    break
+                #else:
+                #    ic("Генерация еще не завершена...")
+                #    time.sleep(1)
+            #ic("Генерация завершена")
+
+        except requests.HTTPError as http_err:
+            ic(f'HTTP ошибка: {http_err}. Ответ: {response.text}')
+            return None
+        except Exception as e:
+            ic(f"Произошла неожиданная ошибка: {str(e)}")
+            return None
+
+    def control_network_generation(self, prompt: str, generation_id: str, image_id: str):
+        generate_url = "https://cloud.leonardo.ai/api/rest/v1/generations"
+        ic(generation_id)
+        ic(image_id)
+        data = {
+            "height": 512,
+            "modelId": "aa77f04e-3eec-4034-9c07-d0f619684628",
+            "prompt": prompt,
+            "presetStyle": "CINEMATIC",
+            "width": 512,
+            "photoReal": True,
+            "photoRealVersion": "v2",
+            "alchemy": True,
+            "controlnets": [
+                {
+                    "initImageId": generation_id,  # Используйте только идентификатор
+                    "initImageType": "GENERATED",
+                    "preprocessorId": 67,
+                    "strengthType": "High",
+                    "influence": 0.39
+                },
+                {
+                    "initImageId": image_id,  # Используйте только идентификатор
+                    "initImageType": "UPLOADED",
+                    "preprocessorId": 67,
+                    "strengthType": "High",
+                    "influence": 0.64
+                }
+            ]
+        }
+
+        response = requests.post(generate_url, json=data, headers=self.headers)
+
+        if response.status_code == 200:
+            print(response.content)
+        else:
+            print(f'Ошибка при создании второго изображения: {response.status_code}, {response.text}')
+
+# Пример использования
+# headers = {"Authorization": "Bearer <Token>"}
+# img_gen = ImageGenerator(headers)
+# img_gen.generate_image("собака на луне", 12345)

@@ -69,19 +69,19 @@ async def set_propmt(call: CallbackQuery, state: FSMContext, session: AsyncSessi
 
 async def generate(message: Message, state: FSMContext, session: AsyncSession):
     user_data = await database.orm_get_user(session, message.from_user.id)
-    current_user_balance = float(user_data.balance )
+    current_user_balance = float(user_data.balance)
     if current_user_balance - 5.0 > 0:
         current_user_balance -= 5.0
-        waiting_message = await message.answer("Генерация изображения, это может занять некоторое время...")
-        await state.update_data(prompt = message.text)
-        data = await state.get_data()
-        image_data = await asyncio.to_thread(AI_requests.imitation_generate_image, data["prompt"], AI_requests.dalle2)
-        image = BufferedInputFile(image_data, f"generated_image_{message.from_user.id}")
-        await waiting_message.delete()
+    waiting_message = await message.answer("Генерация изображения, это может занять некоторое время...")
+    await state.update_data(prompt = message.text)
+    data = await state.get_data()
+    image_data = await asyncio.to_thread(AI_requests.generate_image, message.text, user_data.image)
+    image = BufferedInputFile(image_data, f"generated_image_{message.from_user.id}")
+    await waiting_message.delete()
 
-        await message.answer_photo(photo = image, reply_markup = inline_keyboards.after_generate_menu)
-    else:
-        await message.answer(text = "Не хватает средств на балансе", reply_markup = inline_keyboards.back_to_main_menu)
+    await message.answer_photo(photo = image, reply_markup = inline_keyboards.after_generate_menu)
+    #else:
+    #    await message.answer(text = "Не хватает средств на балансе", reply_markup = inline_keyboards.back_to_main_menu)
 
 @user_router.message(StateFilter(UserStates.prompt), F.text)
 async def generate_handle_state(message: Message, state: FSMContext, session: AsyncSession):
@@ -148,14 +148,17 @@ async def change_photo(call: CallbackQuery, state: FSMContext, session: AsyncSes
     await call.message.answer(text = "Выберите действие", reply_markup = inline_keyboards.photo_menu)
 
 @user_router.callback_query(StateFilter(UserStates.photo_menu), F.data == "show_photo")
-async def change_photo(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def show_photo(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     """Show user photo"""
+    
     await call.message.delete()
     await state.set_state(UserStates.send_photo)
     user_data = await database.orm_get_user(session, call.from_user.id)
 
+    image_bytes = AI_requests.get_image(image_id = user_data.image)
+
     if user_data.image:
-        await call.message.answer_photo(photo = BufferedInputFile(user_data.image, f"user_image_{user_data.id}"), 
+        await call.message.answer_photo(photo = BufferedInputFile(image_bytes, f"user_image_{user_data.id}"), 
                                         caption = "Вот ваше фото", 
                                         reply_markup = inline_keyboards.back_to_photo_menu)
     else:
@@ -174,14 +177,42 @@ async def handling_send_photo(message: Message, state: FSMContext, session: Asyn
     """Processing a photo sent by a user"""
     photo_file_id = message.photo[-1].file_id
 
-    try:
-        file = await message.bot.get_file(photo_file_id)
-        image: io.BytesIO = await message.bot.download_file(file.file_path)
-        image = image.getvalue()
+    #try:
+    file = await message.bot.get_file(photo_file_id)
+    image: io.BytesIO = await message.bot.download_file(file.file_path)
+    image = image.getvalue()
 
-        await database.orm_update_user_image(session, message.from_user.id, image)
-        await message.answer(text = "Фото успешно установлено", reply_markup = inline_keyboards.back_to_photo_menu)
+    status, image_id = AI_requests.upload_image(image)
+    ic(status)
+    await database.orm_update_user_image(session, message.from_user.id, image_id)
+    await message.answer(text = "Фото успешно установлено", reply_markup = inline_keyboards.back_to_photo_menu)
 
-    except Exception as e:
-        ic(f"An error occurred: {e}")
-        await message.answer("Произошла ошибка при обработке вашей фотографии.")
+    #except Exception as e:
+    #    ic(f"An error occurred: {e}")
+    #    await message.answer("Произошла ошибка при обработке вашей фотографии.")
+
+
+
+@user_router.callback_query(commands=['generate_image'])
+async def handle_generate_image(message: types.Message):
+    user_id = message.from_user.id
+    cost_of_image = 10.0  # Стоимость генерации картинки
+
+    balance = get_user_balance_from_db(user_id)
+
+    if balance >= cost_of_image:
+        # Создание платежа
+        payment = YooKassaPayment()
+        payment_description = "Оплата за генерацию картинки"
+        return_url = "https://example.com/return"  # Укажите реальный URL для возврата
+        try:
+            payment_response = payment.create_payment(cost_of_image, "RUB", payment_description, return_url)
+            # Уменьшаем баланс пользователя
+            decrement_user_balance(user_id, cost_of_image)
+            image = create_image()
+            await message.answer(image)
+        except Exception as e:
+            logging.error(f"Ошибка при создании платежа: {e}")
+            await message.answer("Произошла ошибка при обработке платежа.")
+    else:
+        await message.answer("Недостаточно средств на балансе для генерации картинки.")
