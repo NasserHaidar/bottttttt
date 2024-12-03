@@ -24,12 +24,14 @@ from ..keyboards import inline_keyboards
 from ..states.user_states import UserStates
 from ..filters import chat_type
 from ai import AI_Requests
+from YooKassa import YooKassaPayment
 
 #create new Router for handling user messages
 user_router = aiogram.Router()
 user_router.message.filter(chat_type.ChatTypeFilter(["private"]))
 
 AI_requests = AI_Requests(api_key = os.getenv("api_key"))
+Yokassa = YooKassaPayment(account_id = os.getenv("test_shop_id"), secret_key = os.getenv("test_secret_key"))
 
 #------------------------------------------------MAIN MENU-------------------------------------------------------
 @user_router.message(StateFilter("*"), CommandStart())
@@ -70,25 +72,27 @@ async def set_propmt(call: CallbackQuery, state: FSMContext, session: AsyncSessi
 async def generate(message: Message, state: FSMContext, session: AsyncSession):
     user_data = await database.orm_get_user(session, message.from_user.id)
     current_user_balance = float(user_data.balance)
-    if current_user_balance - 50.0 > 0:
-        current_user_balance -= 50.0
+    try:
+        if current_user_balance - 50.0 > 0:
+            current_user_balance -= 50.0
+            await database.orm_update_user_balance(balance = current_user_balance)
+            waiting_message = await message.answer("Генерация изображения, это может занять некоторое время...")
+            await state.update_data(prompt = message.text)
+            data = await state.get_data()
+            images_data = await asyncio.to_thread(AI_requests.generate_image, data["prompt"], user_data.image)
 
-        waiting_message = await message.answer("Генерация изображения, это может занять некоторое время...")
-        await state.update_data(prompt = message.text)
-        data = await state.get_data()
-        images_data = await asyncio.to_thread(AI_requests.generate_image, data["prompt"], user_data.image)
+            media = []
+            for image in images_data:
+                media.append(InputMediaPhoto(media = BufferedInputFile(image, f"generated_image_{message.from_user.id}")))
 
-        media = []
-        for image in images_data:
-            media.append(InputMediaPhoto(media = BufferedInputFile(image, f"generated_image_{message.from_user.id}")))
+            await waiting_message.delete()
 
-        await waiting_message.delete()
-
-        await message.answer_media_group(media = media)
-        await message.answer(text = f"Результат генерации по запросу: {data['prompt']}", reply_markup = inline_keyboards.after_generate_menu)
-    else:
-        await message.answer(text = "Не хватает средств на балансе", reply_markup = inline_keyboards.back_to_main_menu)
-
+            await message.answer_media_group(media = media)
+            await message.answer(text = f"Результат генерации по запросу: {data['prompt']}", reply_markup = inline_keyboards.after_generate_menu)
+        else:
+            await message.answer(text = "Не хватает средств на балансе", reply_markup = inline_keyboards.back_to_main_menu)
+    except:
+        await message.answer(text = f"Ошибка запроса, возможно, ваш запрос не удовлетворяет правилам площадки, пожалуйста, попробуйте еще раз")
 @user_router.message(StateFilter(UserStates.prompt), F.text)
 async def generate_handle_state(message: Message, state: FSMContext, session: AsyncSession):
     await generate(message, state, session)
@@ -124,7 +128,7 @@ async def send_top_up_balance(call: CallbackQuery, state: FSMContext, session: A
     await call.message.delete()
     await state.set_state(UserStates.top_up_balance)
 
-    await call.message.answer(text = "Введите сумму пополнения", 
+    await call.message.answer(text = "Введите сумму пополнения (Минимальная сумма пополнения 10 рублей, максимальная 100 000 рублей)", 
                               reply_markup = inline_keyboards.back_to_balance_menu)
 
 @user_router.message(StateFilter(UserStates.top_up_balance), F.text)
@@ -132,17 +136,35 @@ async def top_up_balance(message: Message, state: FSMContext, session: AsyncSess
     """Top up the balance, yookassa api"""
     user_data = await database.orm_get_user(session, message.from_user.id)
 
-    #TODO make yookassa api integration
-
-    #test code without payment system:
-
     await message.delete()
     try:
-        float(message.text)
-        await database.orm_update_user_balance(session, message.from_user.id, float(user_data.balance) + float(message.text))
-        await message.answer(text = f"Баланс успешно пополнен на: {message.text} руб.", reply_markup = inline_keyboards.back_to_balance_menu)
+        if float(message.text) <= 100000.0 and float(message.text) >= 10.0:
+            payment = Yokassa.create_payment(amount = float(message.text), 
+                                currency = "RUB", 
+                                description = f"Order_{message.from_user.id}_{datetime.now().strftime('%d.%m.%y')}", 
+                                return_url = "https://t.me/Peek_ab0o0_bot")
+            payment_id = payment.id
+            await state.update_data(top_up_balance = payment_id)
+            payment_url_message = await message.answer(text = f"Ссылка на оплату: {payment.confirmation.confirmation_url}", reply_markup = inline_keyboards.back_to_balance_menu)
+            while True:
+                await asyncio.sleep(1)
+                if Yokassa.find_payment(payment_id).status == "succeeded":
+                    await payment_url_message.delete()
+                    await database.orm_update_user_balance(session, message.from_user.id, float(user_data.balance) + float(message.text))
+                    await message.answer(text = f"Баланс успешно пополнен на: {message.text} руб.", reply_markup = inline_keyboards.back_to_balance_menu)
+                    break
+        else:
+            await message.answer(text = "Минимальная сумма пополнения 10 рублей, максимальная 100 000 рублей")
     except ValueError:
         await message.answer(text = "Вы ввели не число, попробуйте еще раз")
+
+"""@user_router.callback_query(StateFilter(UserStates.top_up_balance), F.data == "cancel_payment")
+async def cancel_payment(message: Message, state: FSMContext, session: AsyncSession):
+    data = await state.get_data()
+    payment_id = data["top_up_balance"]
+    ic(payment_id)
+    #Yokassa.cancel_payment(payment_id = payment_id)
+    #await balance_menu(message, state, session)"""
 
 #PHOTO
 @user_router.callback_query(StateFilter(UserStates.profile_menu, UserStates.send_photo), F.data == "photo")
@@ -196,28 +218,3 @@ async def handling_send_photo(message: Message, state: FSMContext, session: Asyn
     except Exception as e:
         ic(f"An error occurred: {e}")
         await message.answer("Произошла ошибка при обработке вашей фотографии.")
-
-
-"""@user_router.callback_query(commands=['generate_image'])
-async def handle_generate_image(message: types.Message):
-    user_id = message.from_user.id
-    cost_of_image = 10.0  # Стоимость генерации картинки
-
-    balance = get_user_balance_from_db(user_id)
-
-    if balance >= cost_of_image:
-        # Создание платежа
-        payment = YooKassaPayment()
-        payment_description = "Оплата за генерацию картинки"
-        return_url = "https://example.com/return"  # Укажите реальный URL для возврата
-        try:
-            payment_response = payment.create_payment(cost_of_image, "RUB", payment_description, return_url)
-            # Уменьшаем баланс пользователя
-            decrement_user_balance(user_id, cost_of_image)
-            image = create_image()
-            await message.answer(image)
-        except Exception as e:
-            logging.error(f"Ошибка при создании платежа: {e}")
-            await message.answer("Произошла ошибка при обработке платежа.")
-    else:
-        await message.answer("Недостаточно средств на балансе для генерации картинки.")"""

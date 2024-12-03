@@ -139,7 +139,7 @@ class AI_Requests():
                     "initImageType": "GENERATED",
                     "preprocessorId": 67,
                     "strengthType": "High",
-                    "influence": 0.35
+                    "influence": 0.2
                 },
                 {
                     "initImageId": image_id, 
@@ -170,7 +170,7 @@ class AI_Requests():
                     ic("Смешивание еще не завершено...")
                     time.sleep(1)
             ic("Смешивание завершено") 
-            ic(images)
+            #ic(images)
             return images
         except:
             ic(f"Ошибка при создании смешивания: {response.status_code}, {response.text}")

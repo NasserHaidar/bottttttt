@@ -57,6 +57,12 @@ back_to_balance_menu = aiogram.types.InlineKeyboardMarkup(
     ]
 )
 
+cancel_payment_button = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [aiogram.types.InlineKeyboardButton(text = "Отменить", callback_data = "cancel_payment")]
+    ]
+)
+
 #photo
 photo_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [

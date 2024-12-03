@@ -11,6 +11,7 @@ class UserStates(StatesGroup):
     #balance
     balance_menu = State()
     top_up_balance = State()
+    payment_succeeded = State()
 
     #set photo
     photo_menu = State()

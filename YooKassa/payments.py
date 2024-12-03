@@ -21,7 +21,10 @@ class YooKassaPayment:
             "capture": True,  
             "description": description  
         }, uuid.uuid4())  
-        return payment  
+        return payment
+
+    def find_payment(self, payment_id: str):
+        return Payment.find_one(payment_id)
 
     def capture_payment(self, payment_id: str, amount: float, currency: str):  
         """Capture a payment."""  
@@ -41,35 +44,6 @@ class YooKassaPayment:
     def cancel_payment(self, payment_id: str):  
         """Cancel a payment."""  
         idempotence_key = str(uuid.uuid4())  
-        response = Payment.cancel(payment_id, idempotence_key)  
-        return response
+        payment = Payment.cancel(payment_id, idempotence_key)  
+        return payment
 
-
-# Функция для проверки баланса пользователя
-    def check_user_balance(self, user_id: str):
-        # Имитация проверки баланса. Здесь вы бы получали настоящий баланс из базы данных.
-        user_balance = self.get_user_balance_from_db(user_id)
-        return user_balance
-
-# Функция для генерации картинки
-    def generate_image(self, user_id: str, cost_of_image: int):
-        if self.check_user_balance(user_id) >= cost_of_image:
-            # Уменьшаем баланс и генерируем картинку
-            self.decrement_user_balance(user_id, cost_of_image)
-            return True
-        else:
-            return "Недостаточно средств на балансе."
-
-
-
-    def get_user_balance_from_db(self, user_id: str):
-        # Здесь должна быть логика получения баланса из базы данных
-        return 50.0  # Пример: возвращаем фиксированный баланс для демонстрации
-
-    def decrement_user_balance(self, user_id: str, amount: float):
-        # Здесь должна быть логика уменьшения баланса пользователя в базе данных
-        pass  # Логика уменьшения баланса
-
-    def create_image():
-        # Реализуйте вашу логику генерации картинки
-        return "Картинка успешно сгенерирована!"
