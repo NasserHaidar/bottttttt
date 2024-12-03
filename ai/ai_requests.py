@@ -91,26 +91,28 @@ class AI_Requests():
             "modelId": "1e60896f-3c26-4296-8ecc-53e2afecc132",
             "prompt": prompt,
             "width": 512,
+            "num_images": 1
         }
 
         try:
-            #response = requests.post(generate_url, json=data, headers=self.headers)
-            #response.raise_for_status()  # Это вызовет ошибку, если код статуса не 200
-            #generation_id = response.json()['sdGenerationJob']['generationId']
+            response = requests.post(generate_url, json=data, headers=self.headers)
+            response.raise_for_status()  # Это вызовет ошибку, если код статуса не 200
+            generation_id = response.json()['sdGenerationJob']['generationId']
             
-            #while True:
-                #image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}"
-                image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/8f46007e-ff2d-438e-a9a6-dfcba5367eba"
-                response = requests.get(image_url, headers=self.headers)
-                ic(response.json())
-                #if response.json()["generations_by_pk"]["status"] == "COMPLETE":
-                #    self.control_network_generation(prompt, generation_id, image_id)
-                #    break
-                #else:
-                #    ic("Генерация еще не завершена...")
-                #    time.sleep(1)
-            #ic("Генерация завершена")
-
+            while True:
+                image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}"
+                #image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/8f46007e-ff2d-438e-a9a6-dfcba5367eba"
+                response = requests.get(image_url, headers = self.headers)
+                #ic(response.json())
+                if response.json()["generations_by_pk"]["status"] == "COMPLETE":
+                    generated_image_id = response.json()["generations_by_pk"]["generated_images"][0]["id"]
+                    break
+                else:
+                    ic("Генерация еще не завершена...")
+                    time.sleep(1)
+            ic("Генерация завершена")
+            return self.control_network_generation(prompt = prompt, generation_id = generated_image_id, image_id = image_id)
+        
         except requests.HTTPError as http_err:
             ic(f'HTTP ошибка: {http_err}. Ответ: {response.text}')
             return None
@@ -133,30 +135,42 @@ class AI_Requests():
             "alchemy": True,
             "controlnets": [
                 {
-                    "initImageId": generation_id,  # Используйте только идентификатор
+                    "initImageId": generation_id, #'bc81e971-6ef4-4e90-bcdf-2fd2a5c8ea69', 
                     "initImageType": "GENERATED",
                     "preprocessorId": 67,
                     "strengthType": "High",
-                    "influence": 0.39
+                    "influence": 0.35
                 },
                 {
-                    "initImageId": image_id,  # Используйте только идентификатор
+                    "initImageId": image_id, 
                     "initImageType": "UPLOADED",
                     "preprocessorId": 67,
                     "strengthType": "High",
-                    "influence": 0.64
+                    "influence": 0.85
                 }
             ]
         }
-
-        response = requests.post(generate_url, json=data, headers=self.headers)
-
-        if response.status_code == 200:
-            print(response.content)
-        else:
-            print(f'Ошибка при создании второго изображения: {response.status_code}, {response.text}')
-
-# Пример использования
-# headers = {"Authorization": "Bearer <Token>"}
-# img_gen = ImageGenerator(headers)
-# img_gen.generate_image("собака на луне", 12345)
+        try:
+            images = []
+            response = requests.post(generate_url, json=data, headers=self.headers)
+            response.raise_for_status()
+            generation_id = response.json()['sdGenerationJob']['generationId']
+            
+            while True:
+                image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}"
+                response = requests.get(image_url, headers = self.headers)
+                #ic(response.json())
+                if response.json()["generations_by_pk"]["status"] == "COMPLETE":
+                    for generated_image in response.json()["generations_by_pk"]["generated_images"]:
+                        image_response = requests.get(generated_image["url"], headers = self.headers) # Возможно здесь не правильно обращаюсь
+                        ic(generated_image["url"])
+                        images.append(image_response.content)
+                    break
+                else:
+                    ic("Смешивание еще не завершено...")
+                    time.sleep(1)
+            ic("Смешивание завершено") 
+            ic(images)
+            return images
+        except:
+            ic(f"Ошибка при создании смешивания: {response.status_code}, {response.text}")
