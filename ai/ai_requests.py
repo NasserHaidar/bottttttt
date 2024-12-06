@@ -39,7 +39,7 @@ class AI_Requests():
             
             # Проверка статуса загрузки
             upload_id = upload_data.get('id')
-            return True, upload_id if upload_id else "Upload successful but no ID returned."
+            return upload_id if upload_id else "Upload successful but no ID returned."
     
         except requests.exceptions.RequestException as e:
             return False, f"Request failed: {str(e)}"
