@@ -5,8 +5,7 @@ from database.orm_query import (orm_add_user,
                                 orm_get_user, 
                                 orm_get_users, 
                                 orm_update_user,
-                                orm_update_user_balance,
-                                orm_update_user_image)
+                                orm_update_user_balance)
 
 __all__ = ["User", 
            "Base", 

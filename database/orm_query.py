@@ -42,11 +42,6 @@ async def orm_update_user_balance(session:AsyncSession, user_id: int, balance: f
     result = await session.execute(query)
     await session.commit()
 
-async def orm_update_user_image(session:AsyncSession, user_id: int, image_id: str):
-    query = update(User).where(User.id == user_id).values(image = image_id)
-    result = await session.execute(query)
-    await session.commit()
-
 async def orm_delete_user(session: AsyncSession , user_id: int):
     query = delete(User).where(User.id == user_id)
     await session.execute(query)
