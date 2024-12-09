@@ -30,15 +30,15 @@ Generate = aiogram.types.InlineKeyboardMarkup(
 )
 
 
-style_menu = InlineKeyboardMarkup(inline_keyboard=[
+style_menu = aiogram.types.InlineKeyboardMarkup(inline_keyboard=[
     [
-        [aiogram.type.InlineKeyboardButton(text = "Фильмы", callback_data="style_movies"), ],
-        [aiogram.type.InlineKeyboardButton(text = "Аниме", callback_data="style_anime"), ],
-        [aiogram.type.InlineKeyboardButton(text = "Супергерои", callback_data="style_superheroes"),]
+        [aiogram.types.InlineKeyboardButton(text = "Фильмы", callback_data="style_movies"), ],
+        [aiogram.types.InlineKeyboardButton(text = "Аниме", callback_data="style_anime"), ],
+        [aiogram.types.InlineKeyboardButton(text = "Супергерои", callback_data="style_superheroes"),]
     ],
 
     [
-        InlineKeyboardButton(text = "Назад ↩️", callback_data="back_to_main_menu")
+        aiogram.types.InlineKeyboardButton(text = "Назад ↩️", callback_data="back_to_main_menu")
     ]
 ])
 #---------------------------------------------------GENERATE KEYBOARD--------------------------------------------
