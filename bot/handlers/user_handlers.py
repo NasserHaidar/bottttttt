@@ -113,7 +113,7 @@ async def generate_menu_format(call: CallbackQuery, state: FSMContext, session: 
 
     await call.message.answer(text = "Выберите нужный формат иозображения", reply_markup = inline_keyboards.generate_menu_format)
 
-# Сделать стили --------------------------------------------------TODO------------------------------------------------------------ 
+# Сделать стили --------------------------------------------------GENERATING------------------------------------------------------------
 @user_router.callback_query(StateFilter(UserStates.generate_menu), F.data == "style")
 async def change_style(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     await call.message.delete()
@@ -155,6 +155,36 @@ async def generate_handle_state(call: CallbackQuery, state: FSMContext, session:
 @user_router.callback_query(F.data == "generate_another_one")
 async def generate_handle_callback(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     await generate(call, state, session)
+
+
+@user_router.callback_query(lambda c: c.data == "create_avatar")
+async def create_avatar(call: types.CallbackQuery):
+    await call.answer("Выберите стиль генерации:", show_alert=True)
+    await call.message.answer("Выберите стиль генерации:", reply_markup=style_menu)
+
+
+@user_router.callback_query(lambda c: c.data == "style_movies")
+async def select_movie_character(call: types.CallbackQuery):
+    await call.answer("Выберите персонажа из фильмов:")
+    for character in movie_characters:
+        await call.message.answer(character)  # Отобразим список фильмов
+    await call.message.answer("Выберите другого персонажа или вернитесь назад.", reply_markup=style_menu)
+
+
+@user_router.callback_query(lambda c: c.data == "style_anime")
+async def select_anime_character(call: types.CallbackQuery):
+    await call.answer("Выберите персонажа из аниме:")
+    for character in anime_characters:
+        await call.message.answer(character)  # Отобразим список аниме
+    await call.message.answer("Выберите другого персонажа или вернитесь назад.", reply_markup=style_menu)
+
+
+@user_router.callback_query(lambda c: c.data == "style_superheroes")
+async def select_superhero_character(call: types.CallbackQuery):
+    await call.answer("Выберите персонажа-супергероя:")
+    for character in superhero_characters:
+        await call.message.answer(character)  # Отобразим список супергероев
+    await call.message.answer("Выберите другого персонажа или вернитесь назад.", reply_markup=style_menu)
 
 #-------------------------------------------------PROFILE---------------------------------------------------------
 #PROFILE MENU

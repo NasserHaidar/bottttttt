@@ -17,7 +17,30 @@ back_to_main_menu = aiogram.types.InlineKeyboardMarkup(
         [aiogram.types.InlineKeyboardButton(text = "⬅️В главное меню", callback_data = "back_to_main_menu"),]
     ]
 )
+#___________________________________________________GENERATE_____________________________________________________
 
+Generate = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard=[
+    [
+        [aiogram.types.InlineKeyboardButton(text = "Создать аватарку 📃🖌", callback_data="create_avatar"),],
+        [aiogram.types.InlineKeyboardButton(text = "Настройка генерации ⚙️", callback_data="settings"), ],
+        [aiogram.types.InlineKeyboardButton(text = "Назад ↩️", callback_data="back")  ,]
+    ]
+    ]
+)
+
+
+style_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        [aiogram.type.InlineKeyboardButton(text = "Фильмы", callback_data="style_movies"), ],
+        [aiogram.type.InlineKeyboardButton(text = "Аниме", callback_data="style_anime"), ],
+        [aiogram.type.InlineKeyboardButton(text = "Супергерои", callback_data="style_superheroes"),]
+    ],
+
+    [
+        InlineKeyboardButton(text = "Назад ↩️", callback_data="back_to_main_menu")
+    ]
+])
 #---------------------------------------------------GENERATE KEYBOARD--------------------------------------------
 generate_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
