@@ -64,35 +64,54 @@ async def menu_handle_callback(call: CallbackQuery, state: FSMContext, session: 
                               reply_markup = inline_keyboards.main_menu)
 
 #------------------------------------------------GENERATING-------------------------------------------------------
+#@user_router.callback_query(F.data == "generate")
+#async def set_propmt(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+#    await call.message.delete()
+#    await state.set_state(UserStates.prompt)
+#
+#    await call.message.answer(text = "(1/2) Введите текстовый запрос", reply_markup = inline_keyboards.back_to_main_menu)
+
+#@user_router.message(StateFilter(UserStates.prompt), F.text)
 @user_router.callback_query(F.data == "generate")
-async def set_propmt(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def set_image(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     await call.message.delete()
-    await state.set_state(UserStates.prompt)
-
-    await call.message.answer(text = "(1/2) Введите текстовый запрос", reply_markup = inline_keyboards.back_to_main_menu)
-
-@user_router.message(StateFilter(UserStates.prompt), F.text)
-async def set_image(message: Message, state: FSMContext, session: AsyncSession):
-    await state.update_data(prompt = str(message.text))    
+    #await state.update_data(prompt = str(message.text))    
     await state.set_state(UserStates.generate_menu)
 
-    await message.answer(text = "(2/2) Отправте свое изображение, важно, чтобы на ней хорошо был виден ваш божественный лик и не было лишних обьектов", 
-                         reply_markup = inline_keyboards.back_to_main_menu)
+    await call.message.answer_photo(photo = FSInputFile("assets\\photo_for_avatar_example.jpg", "photo_for_avatar_example.jpg"), 
+                               caption = "Отправьте свое изображение, на его основе будет сгенерировано новое", 
+                               reply_markup = inline_keyboards.back_to_main_menu)
 
 #GENERATION MENU
 @user_router.message(StateFilter(UserStates.generate_menu), F.photo)
 async def generate_menu(message: Message, state: FSMContext, session: AsyncSession):
     data = await state.get_data()
 
-    photo_file_id = message.photo[-1].file_id
-    file = await message.bot.get_file(photo_file_id)
-    image: io.BytesIO = await message.bot.download_file(file.file_path)
-    image = image.getvalue()
-    uploaded_image_id = AI_requests.upload_image(image)
-    await state.update_data(generate_menu = {"user_image_id": uploaded_image_id, "reference_image_id": ""})
+    if message.photo:
+        photo_file_id = message.photo[-1].file_id
+        file = await message.bot.get_file(photo_file_id)
+        image: io.BytesIO = await message.bot.download_file(file.file_path)
+        image = image.getvalue()
+        uploaded_image_id = AI_requests.upload_image(image)
+        await state.update_data(generate_menu = {"user_image_id": uploaded_image_id, "reference_image_id": ""})
 
-    await message.answer(text = f"Теперь настроим вашу генерацию\nТекущий промпт - {data['prompt']}", reply_markup = inline_keyboards.generate_menu)
+    if data.get("prompt"):
+        prompt = data["prompt"]
+    else:
+        prompt = ""
 
+    await message.answer(text = f"Теперь настроим вашу генерацию\nТекущий промпт - {prompt}", reply_markup = inline_keyboards.generate_menu)
+
+@user_router.callback_query(StateFilter(UserStates.generate_menu), F.data == "back_to_generate_menu")
+async def back_to_generate_menu(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await call.message.delete()
+    await generate_menu(call.message, state, session)
+
+@user_router.callback_query(StateFilter(UserStates.generate_menu), F.data == "format")
+async def generate_menu_format(call: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await call.message.delete()
+
+    await call.message.answer(text = "Выберите нужный формат иозображения", reply_markup = inline_keyboards.generate_menu_format)
 
 # Сделать стили --------------------------------------------------TODO------------------------------------------------------------ 
 @user_router.callback_query(StateFilter(UserStates.generate_menu), F.data == "style")
@@ -103,7 +122,7 @@ async def change_style(call: CallbackQuery, state: FSMContext, session: AsyncSes
 
 
 async def generate(call: CallbackQuery, state: FSMContext, session: AsyncSession):
-    data = state.get_data()
+    data = await state.get_data()
     user_data = await database.orm_get_user(session, call.from_user.id)
     current_user_balance = float(user_data.balance)
     try:
@@ -128,6 +147,7 @@ async def generate(call: CallbackQuery, state: FSMContext, session: AsyncSession
     except Exception as e:
         await call.message.answer(text = f"Ошибка запроса, возможно, ваш запрос не удовлетворяет правилам площадки, пожалуйста, попробуйте еще раз")
         ic(e)
+
 @user_router.callback_query(StateFilter(UserStates.generate_menu), F.data == "generate_image")
 async def generate_handle_state(call: CallbackQuery, state: FSMContext, session: AsyncSession):
     await generate(call, state, session)
@@ -190,8 +210,8 @@ async def top_up_balance(call: CallbackQuery, state: FSMContext, session: AsyncS
                 await call.message.answer(text = f"Баланс генераций успешно пополнен на: {value}", reply_markup = inline_keyboards.back_to_balance_menu)
                 break
 
-    except ValueError:
-        await call.message.answer(text = "Вы ввели не число, попробуйте еще раз")
+    except Exception as e:
+        await call.message.answer(text = f"Ошибка: {e}")
 
 """@user_router.callback_query(StateFilter(UserStates.top_up_balance), F.data == "cancel_payment")
 async def cancel_payment(message: Message, state: FSMContext, session: AsyncSession):

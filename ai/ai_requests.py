@@ -94,8 +94,16 @@ class AI_Requests():
             "num_images": 1
         }
 
+        #data = {
+        #    "height": 512,
+        #    "modelId": "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3", # Setting model ID to Leonardo Creative
+        #    "prompt": prompt,
+        #    "width": 512,
+        #    "imagePrompts": [image_id] # Accepts an array of image IDs
+        #}
+
         try:
-            response = requests.post(generate_url, json=data, headers=self.headers)
+            response = requests.post(generate_url, json = data, headers = self.headers)
             response.raise_for_status()  # Это вызовет ошибку, если код статуса не 200
             generation_id = response.json()['sdGenerationJob']['generationId']
             
@@ -112,6 +120,8 @@ class AI_Requests():
                     time.sleep(1)
             ic("Генерация завершена")
             return self.control_network_generation(prompt = prompt, generation_id = generated_image_id, image_id = image_id)
+            #image_response = requests.get(response.json()["generations_by_pk"]["generated_images"][0]["url"], headers = self.headers)
+            #return [image_response.content]
         
         except requests.HTTPError as http_err:
             ic(f'HTTP ошибка: {http_err}. Ответ: {response.text}')
@@ -162,7 +172,7 @@ class AI_Requests():
                 #ic(response.json())
                 if response.json()["generations_by_pk"]["status"] == "COMPLETE":
                     for generated_image in response.json()["generations_by_pk"]["generated_images"]:
-                        image_response = requests.get(generated_image["url"], headers = self.headers) # Возможно здесь не правильно обращаюсь
+                        image_response = requests.get(generated_image["url"], headers = self.headers)
                         ic(generated_image["url"])
                         images.append(image_response.content)
                     break

@@ -7,34 +7,45 @@ from icecream import ic
 #----------------------------------------------------MAIN MENU KEYBOARD----------------------------------------
 main_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "📃🖌️ Создать аватарку 📃🖌️", callback_data = "generate"),],
-        [aiogram.types.InlineKeyboardButton(text = "👤 Профиль 👤", callback_data = "profile"),]
+        [aiogram.types.InlineKeyboardButton(text = "📃🖌️Сгенерировать изображение", callback_data = "generate"),],
+        [aiogram.types.InlineKeyboardButton(text = "👤Профиль", callback_data = "profile"),]
     ]
 )
 
 back_to_main_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "В главное меню", callback_data = "back_to_main_menu"),]
+        [aiogram.types.InlineKeyboardButton(text = "⬅️В главное меню", callback_data = "back_to_main_menu"),]
     ]
 )
 
 #---------------------------------------------------GENERATE KEYBOARD--------------------------------------------
 generate_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "Сгенерировать аватар", callback_data = "generate_image"),],
+        [aiogram.types.InlineKeyboardButton(text = "📃🖌️Начать генерацию", callback_data = "generate_image"),],
         [
-            aiogram.types.InlineKeyboardButton(text = "Промт", callback_data = "generate"),
-            aiogram.types.InlineKeyboardButton(text = "Cтиль", callback_data = "style"),
+            aiogram.types.InlineKeyboardButton(text = "✍️Промт", callback_data = "prompt"),
+            aiogram.types.InlineKeyboardButton(text = "🎨Cтиль", callback_data = "style"),
+            aiogram.types.InlineKeyboardButton(text = "📐Формат", callback_data = "format"),
         ],
-        [aiogram.types.InlineKeyboardButton(text = "Другие настройки", callback_data = "generate_config"),],
-        [aiogram.types.InlineKeyboardButton(text = "В главное меню", callback_data = "back_to_main_menu"),]
+        [aiogram.types.InlineKeyboardButton(text = "⬅️В главное меню", callback_data = "back_to_main_menu"),]
+    ]
+)
+
+generate_menu_format = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [
+            aiogram.types.InlineKeyboardButton(text = "1:1", callback_data = "generate_menu_format_1:1"),
+            aiogram.types.InlineKeyboardButton(text = "9:16", callback_data = "generate_menu_format_9:16"),
+            aiogram.types.InlineKeyboardButton(text = "16:9", callback_data = "generate_menu_format_16:9"),
+        ],
+        [aiogram.types.InlineKeyboardButton(text = "⬅️Назад", callback_data = "back_to_generate_menu"),]
     ]
 )
 
 after_generate_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "Сгенерировать еще раз", callback_data = "generate_another_one"),],
-        [aiogram.types.InlineKeyboardButton(text = "В главное меню", callback_data = "back_to_main_menu"),]
+        [aiogram.types.InlineKeyboardButton(text = "🔄Сгенерировать еще раз", callback_data = "generate_another_one"),],
+        [aiogram.types.InlineKeyboardButton(text = "⬅️В главное меню", callback_data = "back_to_main_menu"),]
     ]
 )
 
@@ -42,16 +53,16 @@ after_generate_menu = aiogram.types.InlineKeyboardMarkup(
 #profile menu
 profile_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "Управление Балансом", callback_data = "balance")],
-        [aiogram.types.InlineKeyboardButton(text = "В главное меню", callback_data = "back_to_main_menu")]
+        [aiogram.types.InlineKeyboardButton(text = "💵Управление Балансом", callback_data = "balance")],
+        [aiogram.types.InlineKeyboardButton(text = "⬅️В главное меню", callback_data = "back_to_main_menu")]
     ]
 )
 
 #balance
 balance_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "Пополнить Баланс", callback_data = "top_up_balance")],
-        [aiogram.types.InlineKeyboardButton(text = "Назад", callback_data = "profile")]
+        [aiogram.types.InlineKeyboardButton(text = "📊Пополнить Баланс", callback_data = "top_up_balance")],
+        [aiogram.types.InlineKeyboardButton(text = "⬅️Назад", callback_data = "profile")]
     ]
 )
 
@@ -70,19 +81,19 @@ chose_balance_menu = aiogram.types.InlineKeyboardMarkup(
             aiogram.types.InlineKeyboardButton(text = "200 (3500 руб)", callback_data = "balance_200_generations")
         ],
         [
-            aiogram.types.InlineKeyboardButton(text = "Назад", callback_data = "balance")
+            aiogram.types.InlineKeyboardButton(text = "⬅️Назад", callback_data = "balance")
         ],
     ]
 )
 
 back_to_balance_menu = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "Назад", callback_data = "balance")]
+        [aiogram.types.InlineKeyboardButton(text = "⬅️Назад", callback_data = "balance")]
     ]
 )
 
 cancel_payment_button = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard = [
-        [aiogram.types.InlineKeyboardButton(text = "Отменить", callback_data = "cancel_payment")]
+        [aiogram.types.InlineKeyboardButton(text = "⬅️Отменить", callback_data = "cancel_payment")]
     ]
 )
