@@ -20,7 +20,7 @@ class AI_Requests():
     def upload_image(self, image: bytes):
         try:
             # Инициализация загрузки
-            response = requests.post(url=self.upload_images_url, json={"extension": "jpg"}, headers=self.headers)
+            response = requests.post(url = self.upload_images_url, json = {"extension": "jpg"}, headers = self.headers)
             response.raise_for_status()  # Raises an error for bad responses
             
             upload_data = response.json().get('uploadInitImage', {})
@@ -34,7 +34,7 @@ class AI_Requests():
             files = {'file': ('image.jpg', BytesIO(image), 'image/jpeg')}
             
             # Загрузка изображения
-            response = requests.post(url=upload_url, data=fields, files=files)
+            response = requests.post(url = upload_url, data = fields, files = files)
             response.raise_for_status()  # Raises an error for bad responses
             
             # Проверка статуса загрузки
@@ -49,7 +49,7 @@ class AI_Requests():
     def get_image(self, image_id: str) -> bytes:
         try:
             # Construct the URL for retrieving the image
-            response = requests.get(f"{self.upload_images_url}/{image_id}", headers=self.headers)
+            response = requests.get(f"{self.upload_images_url}/{image_id}", headers = self.headers)
             response.raise_for_status()  # Raises an error for bad responses
 
             # Parse the JSON response to get the image URL
@@ -63,7 +63,7 @@ class AI_Requests():
                 return None
             
             # Retrieve the image from the image URL
-            response = requests.get(image_url, headers=self.headers)
+            response = requests.get(image_url, headers = self.headers)
             response.raise_for_status()  # Raises an error for bad responses
 
             return response.content  # Return the raw image bytes
@@ -79,90 +79,42 @@ class AI_Requests():
             return None
 
 
-    def generate_image(self, prompt: str, image_id: int):
-        if not prompt:  # Проверка на пустоту
-            print("Ошибка: 'prompt' не может быть пустым.")
-            return None
-        
+    def generate_image(self, prompt: str, reference_image_id: str, image_id: int, resolution: str):
         generate_url = "https://cloud.leonardo.ai/api/rest/v1/generations"
+        resolutions = {"1:1": [1024, 1024], "16:9": [1280, 720], "9:16": [720, 1280]}
 
-        data = {
-            "height": 512,
-            "modelId": "1e60896f-3c26-4296-8ecc-53e2afecc132",
-            "prompt": prompt,
-            "width": 512,
-            "num_images": 1
-        }
-
-        #data = {
-        #    "height": 512,
-        #    "modelId": "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3", # Setting model ID to Leonardo Creative
-        #    "prompt": prompt,
-        #    "width": 512,
-        #    "imagePrompts": [image_id] # Accepts an array of image IDs
-        #}
-
-        try:
-            response = requests.post(generate_url, json = data, headers = self.headers)
-            response.raise_for_status()  # Это вызовет ошибку, если код статуса не 200
-            generation_id = response.json()['sdGenerationJob']['generationId']
-            
-            while True:
-                image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}"
-                #image_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/8f46007e-ff2d-438e-a9a6-dfcba5367eba"
-                response = requests.get(image_url, headers = self.headers)
-                #ic(response.json())
-                if response.json()["generations_by_pk"]["status"] == "COMPLETE":
-                    generated_image_id = response.json()["generations_by_pk"]["generated_images"][0]["id"]
-                    break
-                else:
-                    ic("Генерация еще не завершена...")
-                    time.sleep(1)
-            ic("Генерация завершена")
-            return self.control_network_generation(prompt = prompt, generation_id = generated_image_id, image_id = image_id)
-            #image_response = requests.get(response.json()["generations_by_pk"]["generated_images"][0]["url"], headers = self.headers)
-            #return [image_response.content]
-        
-        except requests.HTTPError as http_err:
-            ic(f'HTTP ошибка: {http_err}. Ответ: {response.text}')
-            return None
-        except Exception as e:
-            ic(f"Произошла неожиданная ошибка: {str(e)}")
-            return None
-
-    def control_network_generation(self, prompt: str, generation_id: str, image_id: str):
         generate_url = "https://cloud.leonardo.ai/api/rest/v1/generations"
-        ic(generation_id)
+        ic(reference_image_id)
         ic(image_id)
         data = {
-            "height": 512,
+            "height": resolutions[resolution][0],
+            "width": resolutions[resolution][1],
             "modelId": "aa77f04e-3eec-4034-9c07-d0f619684628",
             "prompt": prompt,
-            "presetStyle": "CINEMATIC",
-            "width": 512,
+            "presetStyle": "PORTRAIT",
             "photoReal": True,
-            "photoRealVersion": "v2",
+            "photoRealVersion":"v2",
             "alchemy": True,
             "controlnets": [
                 {
-                    "initImageId": generation_id, #'bc81e971-6ef4-4e90-bcdf-2fd2a5c8ea69', 
-                    "initImageType": "GENERATED",
+                    "initImageId": reference_image_id, #'bc81e971-6ef4-4e90-bcdf-2fd2a5c8ea69', 
+                    "initImageType": "UPLOADED",
                     "preprocessorId": 67,
-                    "strengthType": "High",
-                    "influence": 0.2
+                    "strengthType": "Mid",
+                    "influence": 0.8
                 },
                 {
                     "initImageId": image_id, 
                     "initImageType": "UPLOADED",
                     "preprocessorId": 67,
-                    "strengthType": "High",
-                    "influence": 0.85
+                    "strengthType": "Mid",
+                    "influence": 0.6
                 }
             ]
         }
         try:
             images = []
-            response = requests.post(generate_url, json=data, headers=self.headers)
+            response = requests.post(generate_url, json = data, headers = self.headers)
             response.raise_for_status()
             generation_id = response.json()['sdGenerationJob']['generationId']
             

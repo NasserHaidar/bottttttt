@@ -22,9 +22,9 @@ back_to_main_menu = aiogram.types.InlineKeyboardMarkup(
 Generate = aiogram.types.InlineKeyboardMarkup(
     inline_keyboard=[
     [
-        [aiogram.types.InlineKeyboardButton(text = "Создать аватарку 📃🖌", callback_data="create_avatar"),],
-        [aiogram.types.InlineKeyboardButton(text = "Настройка генерации ⚙️", callback_data="settings"), ],
-        [aiogram.types.InlineKeyboardButton(text = "Назад ↩️", callback_data="back")  ,]
+        aiogram.types.InlineKeyboardButton(text = "Создать аватарку 📃🖌", callback_data="create_avatar"),
+        aiogram.types.InlineKeyboardButton(text = "Настройка генерации ⚙️", callback_data="settings"), 
+        aiogram.types.InlineKeyboardButton(text = "Назад ↩️", callback_data="back")
     ]
     ]
 )
@@ -32,9 +32,9 @@ Generate = aiogram.types.InlineKeyboardMarkup(
 
 style_menu = aiogram.types.InlineKeyboardMarkup(inline_keyboard=[
     [
-        [aiogram.types.InlineKeyboardButton(text = "Фильмы", callback_data="style_movies"), ],
-        [aiogram.types.InlineKeyboardButton(text = "Аниме", callback_data="style_anime"), ],
-        [aiogram.types.InlineKeyboardButton(text = "Супергерои", callback_data="style_superheroes"),]
+        aiogram.types.InlineKeyboardButton(text = "Фильмы", callback_data="style_movies"),
+        aiogram.types.InlineKeyboardButton(text = "Аниме", callback_data="style_anime"),
+        aiogram.types.InlineKeyboardButton(text = "Супергерои", callback_data="style_superheroes"),
     ],
 
     [
@@ -51,6 +51,12 @@ generate_menu = aiogram.types.InlineKeyboardMarkup(
             aiogram.types.InlineKeyboardButton(text = "📐Формат", callback_data = "format"),
         ],
         [aiogram.types.InlineKeyboardButton(text = "⬅️В главное меню", callback_data = "back_to_main_menu"),]
+    ]
+)
+
+back_to_generate_menu = aiogram.types.InlineKeyboardMarkup(
+    inline_keyboard = [
+        [aiogram.types.InlineKeyboardButton(text = "⬅️Назад", callback_data = "back_to_generate_menu"),]
     ]
 )
 

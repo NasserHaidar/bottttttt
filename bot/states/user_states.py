@@ -19,4 +19,6 @@ class UserStates(StatesGroup):
 
     #generating
     prompt = State()
+    format = State()
+    style = State()
     generate_menu = State()
