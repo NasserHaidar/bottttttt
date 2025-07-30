@@ -4,7 +4,7 @@ import os
 import asyncio
 import aiogram
 
-from aiogram import F
+from aiogram import F, Bot
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile, FSInputFile, InputMediaPhoto, InputFile
 from aiogram.filters import StateFilter, Command, CommandStart
 from aiogram.fsm.state import StatesGroup, State
@@ -140,34 +140,91 @@ async def change_style_apply(call: CallbackQuery, state: FSMContext, session: As
 
 #GENERATION MENU
 @user_router.message(StateFilter(UserStates.generate_menu), F.photo)
-async def generate_menu(message: Message, state: FSMContext, session: AsyncSession):
-    data = await state.get_data()
+async def generate_menu(
+    message: Message, 
+    state: FSMContext, 
+    session: AsyncSession, 
+    bot: Bot
+):
+    """
+    Handle photo uploads in generate menu state with proper Leonardo AI API error handling
+    """
+    try:
+        # Get current state data
+        data = await state.get_data()
+        user_data = await database.orm_get_user(session, message.from_user.id)
+        
+        if float(user_data.balance) < 1.0:
+            await message.answer(
+                "❌ Недостаточно средств на балансе. Пожалуйста, пополните баланс.",
+                reply_markup=inline_keyboards.balance_menu
+            )
+            return
 
-    if message.photo:
+        if not message.photo:
+            await message.answer(
+                "Пожалуйста, отправьте изображение",
+                reply_markup=inline_keyboards.back_to_generate_menu
+            )
+            return
+
+        # Get highest resolution photo
         photo_file_id = message.photo[-1].file_id
-        file = await message.bot.get_file(photo_file_id)
-        image: io.BytesIO = await message.bot.download_file(file.file_path)
-        image = image.getvalue()
-        uploaded_image_id = AI_requests.upload_image(image)
-        ic(uploaded_image_id)
-        await state.update_data(generate_menu = {"user_image_id": uploaded_image_id, "reference_image_id": ""})
+        
+        try:
+            # Download the photo
+            file = await bot.get_file(photo_file_id)
+            image: io.BytesIO = await bot.download_file(file.file_path)
+            image_bytes = image.getvalue()
+            
+            # Upload to AI service with error handling
+            upload_result = AI_requests.upload_image(image_bytes)
+            
+            if not upload_result[0]:  # If upload failed
+                ic(f"Upload failed: {upload_result[1]}")
+                raise Exception(f"API Upload Error: {upload_result[1]}")
 
-    if data.get("prompt"):
-        prompt = data["prompt"]
-    else:
-        prompt = "n"
+            uploaded_image_id = upload_result[1]
+            ic(f"Successfully uploaded image ID: {uploaded_image_id}")
+            
+            # Update state with new image data
+            await state.update_data(
+                generate_menu={
+                    "user_image_id": uploaded_image_id,
+                    "reference_image_id": ""
+                }
+            )
+            
+            # Get current settings for display
+            prompt = data.get("prompt", "не указан")
+            image_format = data.get("format", "1:1")
+            style = data.get("style", "Зима")
+            
+            # Send confirmation message
+            await message.answer(
+                text=(
+                    "✅ Изображение успешно загружено!\n\n"
+                    f"✍️ Текущий промпт: {prompt}\n"
+                    f"📐 Формат: {image_format}\n"
+                    f"🎨 Стиль: {style}\n\n"
+                    "Выберите дальнейшее действие:"
+                ),
+                reply_markup=inline_keyboards.generate_menu
+            )
+            
+        except Exception as upload_error:
+            ic(f"Image processing error: {upload_error}")
+            await message.answer(
+                "⚠️ Ошибка при загрузке изображения в AI сервис. Проверьте ваш API ключ.",
+                reply_markup=inline_keyboards.back_to_main_menu
+            )
 
-    if data.get("format"):
-        format = data["format"]
-    else:
-        format = "1:1"
-
-    if data.get("style"):
-        style = data["style"]
-    else:
-        style = "Зима"
-    await message.answer(text = f"Теперь настроим вашу генерацию\n\n✍️Текущий промпт - {prompt}\n\n📐Формат - {format}\n\n🎨Стиль - {style}", 
-                         reply_markup = inline_keyboards.generate_menu)
+    except Exception as e:
+        ic(f"Handler error: {e}")
+        await message.answer(
+            "⚠️ Произошла внутренняя ошибка. Попробуйте позже.",
+            reply_markup=inline_keyboards.back_to_main_menu
+        )
 
 @user_router.callback_query(StateFilter(UserStates.generate_menu), F.data == "back_to_generate_menu")
 async def back_to_generate_menu(call: CallbackQuery, state: FSMContext, session: AsyncSession):
